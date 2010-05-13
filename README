@@ -1,9 +1,9 @@
 SAFECREATIVE RUBY LIBRARY
 
-HOW TO
+REFERENCES
+ * http://wiki.safecreative.net/wiki/Safe_Creative_Wiki
+ * http://labs.safecreative.net/api-doc/ (old docs)
 
+TEST
 From command line run
   ruby sc_test.rb
-
-REFERENCES
- * http://labs.safecreative.net/api-doc/

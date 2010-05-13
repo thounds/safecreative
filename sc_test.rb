@@ -14,7 +14,7 @@ SHARED_KEY  = "2qbzy8y4jmfrzztv7b9h405hi"
 
 logger = Logger.new(STDOUT)
 
-sf = SafeCreative.new(SHARED_KEY, PRIVATE_KEY)
+sf = SafeCreative::Base.new(SHARED_KEY, PRIVATE_KEY)
 
 ztime = sf.ztime
 puts ztime
