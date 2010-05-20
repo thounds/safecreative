@@ -1,7 +1,7 @@
 #
-# response.rb
+# signed.rb
 # 
-# Created by Giovanni Cappellotto on 13/05/2010.
+# Created by Giovanni Cappellotto on 19/05/2010.
 # 
 # Copyright (c) 2010 Thounds Inc.
 # All rights reserved.
@@ -34,53 +34,59 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-require 'rexml/document'
-
 module SafeCreative
-  class Response
-    def initialize(response)
-      SafeCreative::Base.logger.debug "RESPONSE: #{response}" unless SafeCreative::Base.logger.nil?
-    
-      @response = response
-      @response_hash = parse_elements(REXML::Document.new(@response).elements)
-    end
-    
-    def [](key)
-      @response_hash[key]
-    end
-
-    def parse_elements(elements)
-      parse_hash = {}
-
-      elements.each do |element|
-        if "error" == element.name
-          raise "#{element.elements['errorId'].text} #{"(" + element.elements['errorMessage'].text + ")" unless element.elements['errorMessage'].nil?}"
-        end
-
-        if "exception" == element.name
-          raise "#{element.elements['exceptionId'].text} #{"(" + element.elements['exceptionMessage'].text + ")" unless element.elements['exceptionMessage'].nil?}"
-        end
-
-        unless element.has_elements?
-          parse_hash[element.name] = element.text
-        else
-          if parse_hash[element.name].nil?
-            parse_hash[element.name] = parse_elements(element.elements)
-          else
-            if "Array" != parse_hash[element.name].class.to_s
-              temp = parse_hash[element.name]
-              parse_hash[element.name] = [temp]
-            end
-            parse_hash[element.name] << parse_elements(element.elements)
-          end
-        end
+  module Params
+    class Signed < SafeCreative::Params::Base
+      def initialize(hash, private_key)
+        super(hash)
+        # add ztime parameter
+        @hash = @hash.merge({"ztime" => unixtime})
+        @private_key = private_key
       end
-
-      parse_hash
-    end
   
-    def to_s
-      @response_hash.inspect
+      def to_query
+        query_string = super
+    
+        # append signature parameter
+        query_string += "&signature=#{sign}"
+    
+        query_string
+      end
+  
+      private
+      
+      def unixtime
+        now = Time.now.utc
+        now_i = now.to_i * 1000
+        now_i += now.usec / 1000
+        now_i.to_s
+      end
+      
+      def sign
+        Digest::SHA1.hexdigest(@private_key + "&" + sort_to_query)
+      end
+  
+      def sort_to_query
+        SafeCreative::Base.logger.debug "SORT_TO_QUERY INPUT: #{@hash.inspect}" unless SafeCreative::Base.logger.nil?
+    
+        params = @hash.clone
+        params.delete("debug-component")
+        sorted = params.sort
+    
+        query_string = ""
+        size = sorted.size
+        sorted.each_with_index do |item, index|
+          item_string = ""
+          item.each_with_index do |val, i|
+            item_string += "#{val}" + (i == 0 ? "=" : "")
+          end
+          query_string += item_string + (index + 1 < size ? "&" : "")
+        end
+    
+        SafeCreative::Base.logger.debug "SORTED PARAMS: #{query_string}" unless SafeCreative::Base.logger.nil?
+    
+        query_string
+      end
     end
   end
 end

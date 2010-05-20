@@ -37,6 +37,7 @@
 require 'safe_creative/base'
 require 'safe_creative/params'
 require 'safe_creative/response'
+require 'safe_creative/work'
 
 module SafeCreative
   DEBUG = true
@@ -49,6 +50,5 @@ module SafeCreative
   MANAGEMENT_LEVEL = {
     :manage => "MANAGE",
     :get => "GET",
-    :add => "ADD"
-  }
+    :add => "ADD"}
 end

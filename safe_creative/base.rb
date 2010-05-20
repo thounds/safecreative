@@ -44,148 +44,99 @@ module SafeCreative
     def initialize(shared_key, private_key, logger = nil)
       @shared_key  = shared_key
       @private_key = private_key
-      @logger      = logger
+      @@logger     = logger
+    end
+    
+    def self.logger
+      @@logger
     end
 
     def ztime
-      call(SafeCreative::Params.new({"component" => "ztime"}))
+      call(SafeCreative::Params::Base.new({"component" => "ztime"}))
     end
 
     def authkey_create
-      params = SafeCreative::Params.new({
+      params = SafeCreative::Params::Signed.new({
         "component" => "authkey.create",
-        "sharedkey" => @shared_key,
-        "ztime" => SafeCreative::Params.unixtime
-      })
-  
-      params.sign(@private_key)
+        "sharedkey" => @shared_key}, @private_key)
 
       call(params)
     end
 
     # NOTE: useless because linked users authkeys are already authorized
     def authkey_edit_url(authkey, management_level = SafeCreative::MANAGEMENT_LEVEL[:add])
-      params = SafeCreative::Params.new({
+      params = SafeCreative::Params::Signed.new({
         "authkey" => authkey,
         "level" => management_level,
-        "sharedkey" => @shared_key,
-        "ztime" => SafeCreative::Params.unixtime
-      })
-  
-      params.sign(@private_key)
+        "sharedkey" => @shared_key}, @private_key)
   
       "http://" + (SafeCreative::DEBUG ? SafeCreative::URL_ARENA : SafeCreative::URL) + "/api-ui/authkey.edit?" + params.to_query
     end
 
     def authkey_state(authkey)
-      params = SafeCreative::Params.new({
+      params = SafeCreative::Params::Signed.new({
         "component" => "authkey.state",
         "authkey" => authkey,
-        "sharedkey" => @shared_key,
-        "ztime" => SafeCreative::Params.unixtime
-      })
-  
-      params.sign(@private_key)
+        "sharedkey" => @shared_key}, @private_key)
 
       call(params)
     end
 
-    def user_link(mail = nil)
-      params = SafeCreative::Params.new({
+    def user_link(mail = nil, management_level = SafeCreative::MANAGEMENT_LEVEL[:manage])
+      params = SafeCreative::Params::Signed.new({
         "component" => "user.link",
-        "level" => SafeCreative::MANAGEMENT_LEVEL[:manage],
-        "mail" => "potomak84@gmail.com",
-        "sharedkey" => @shared_key,
-        "ztime" => SafeCreative::Params.unixtime
-      })
-  
-      params.sign(@private_key)
+        "level" => management_level,
+        "mail" => mail,
+        # don't send notifications
+        "sendNotifications" => 0.to_s,
+        "sharedkey" => @shared_key}, @private_key)
 
       call(params)
     end
 
     def user_licenses(authkey, private_key, page = 1)
-      params = SafeCreative::Params.new({
+      params = SafeCreative::Params::Signed.new({
         "component" => "user.licenses",
         "page" => page.to_s,
-        "authkey" => authkey,
-        "ztime" => SafeCreative::Params.unixtime
-      })
-  
-      params.sign(private_key)
+        "authkey" => authkey}, private_key)
 
       call(params)
     end
 
     def user_profiles(authkey, private_key)
-      params = SafeCreative::Params.new({
+      params = SafeCreative::Params::Signed.new({
         "component" => "user.profiles",
-        "authkey" => authkey,
-        "ztime" => SafeCreative::Params.unixtime
-      })
-  
-      params.sign(private_key)
+        "authkey" => authkey}, private_key)
 
       call(params)
     end
 
-    def work_register(authkey, private_key, noncekey, url)
-      #
-      # TODO: parse filename from url (or maybe directly from params)
-      #
-  
-      filename = "test_track.mp3"
+    def work_register(authkey, private_key, noncekey, work, license = "http://creativecommons.org/licenses/by/2.0/")
       size = 0
       checksum = ""
   
-      open(url) do |f|
+      open(work.url) do |f|
         size = f.meta["content-length"]
         checksum = Digest::SHA1.hexdigest(f.read)
       end
   
-      params = SafeCreative::Params.new({
+      params = SafeCreative::Params::Signed.new({
         "component" => "work.register",
         "authkey" => authkey,
         "noncekey" => noncekey,
-        "title" => "A title",
-        "license" => "http://creativecommons.org/licenses/by/2.0/", # see user.licenses
-        "worktype" => "music",                                      # see work.types
-        "url" => url,
-        "filename" => filename,
+        "title" => work.title,
+        "license" => license, # see user.licenses
+        "worktype" => work.type, # see work.types
+        "url" => work.url,
+        "filename" => work.filename,
         "checksum" => checksum,
-        "size" => size,
-        "ztime" => SafeCreative::Params.unixtime
-      })
-  
-      #
-      # EXAMPLE FROM SAFECREATIVE API DOCUMENTATION
-      #
-      # params = SafeCreative::Params.new({
-      #   "allowdownload" => 1.to_s,
-      #   "excerpt" => "An important text about registry philosophy",
-      #   "obs" => "More info at ...",
-      #   "registrypublic" => 1.to_s,
-      #   "tags" => "tag1 tag2",
-      #   "text" => "Text to be registered",
-      #   #"usealias" => 1.to_s,
-      #   #"userauthor" => 1.to_s,
-      #   
-      #   "component" => "work.register",
-      #   "authkey" => authkey,
-      #   "noncekey" => noncekey,
-      #   "title" => "A title",
-      #   "license" => "http://creativecommons.org/licenses/by/2.0/", # see user.licenses
-      #   "worktype" => "article",                                    # see work.types
-      #   "ztime" => SafeCreative::Params.unixtime
-      # })
-
-      params.sign(private_key)
+        "size" => size.to_s}, private_key)
   
       call(params)
     end
 
     def work_types
-      call(SafeCreative::Params.new({"component" => "work.types"}))
+      call(SafeCreative::Params::Base.new({"component" => "work.types"}))
     end
 
     private
@@ -199,9 +150,9 @@ module SafeCreative
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
       http.start do |http|
         query = SafeCreative::API_ENDPOINT + "?" + params.to_query
-        if SafeCreative::DEBUG
-          puts "REQUEST: #{query}"
-        end
+        
+        @@logger.debug "REQUEST: #{query}" unless @@logger.nil?
+        
         req = Net::HTTP::Get.new(query)
         response = http.request(req)
         resp = response.body
