@@ -12,43 +12,29 @@ require File.dirname(__FILE__) + '/safe_creative'
 PRIVATE_KEY = "42eicz8tp2gfy6vvqzz7l1jhe"
 SHARED_KEY  = "2qbzy8y4jmfrzztv7b9h405hi"
 
-logger = Logger.new(STDOUT)
+log = Logger.new(STDOUT)
+log.level = Logger::DEBUG
 
-sf = SafeCreative::Base.new(SHARED_KEY, PRIVATE_KEY)
+sf = SafeCreative::Base.new(SHARED_KEY, PRIVATE_KEY, log)
 
-ztime = sf.ztime
-puts ztime
+log.debug sf.ztime
 
-# authkey_create = sf.authkey_create
-# puts authkey_create
+# log.debug sf.authkey_create
 
-# user_link = sf.user_link
-# puts user_link
+# email = 'potomak84@gmail.com'
+# log.debug sf.user_link(email)
 
-authkey = "5vg3a515cu5vw9vfqt9csn35j"
-private_key = "1vm7you8xqs5wwepyd4qy1kz0"
-authkey_state = sf.authkey_state(authkey)
-puts authkey_state
+# authkey = "f9fy4mjwuavwshvg9qqrdbwy"
+# private_key = "3n8zd5hlkasi5c31ny0rtxraz"
+# log.debug sf.authkey_state(authkey)
 
-# work_types = sf.work_types
-# puts work_types
+# log.debug sf.work_types
 
-# user_licenses = sf.user_licenses(authkey, private_key)
-# puts user_licenses
+# log.debug sf.user_licenses(authkey, private_key)
 
 # track_url = "http://s3.amazonaws.com/mp3.stage.thounds.com/thounds/1302/tracks/2175.mp3"
-# noncekey = "2u0zt65q6tvvsp3lxgez6mdb7"
-# work_register = sf.work_register(authkey, private_key, noncekey, track_url)
-# puts work_register
+# noncekey = "xv5emjg0rql1df5ns7odw8l2"
+# work = SafeCreative::Work.new("My test song", SafeCreative::Work::TYPE[:music], track_url, "2175.mp3")
+# log.debug sf.work_register(authkey, private_key, noncekey, work)
 
-# user_profiles = sf.user_profiles(authkey, private_key)
-# puts user_profiles
-
-
-#
-# NOTES
-#
-# This is a list of registrered works...
-# 1. 1005040146823 (my first text registration)
-# 2. 1005040146830 (my first track registration)
-# 3. 1005040146847 (second text registration test)
+# log.debug sf.user_profiles(authkey, private_key)
